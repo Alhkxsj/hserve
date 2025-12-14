@@ -1,0 +1,8 @@
+Package: https-server
+Version: 1.0.0
+Architecture: aarch64
+Maintainer: @termux
+Homepage: https://github.com/Alhkxsj/https-server
+Description: A simple zero-configuration HTTPS file server
+ A simple and easy-to-use HTTPS file server with automatic certificate generation,
+ suitable for local development and file sharing on Android devices.

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+echo "🗑️  清理HTTPS服务器文件..."
+
+if [ -n "$PREFIX" ]; then
+    echo "检测到Termux环境"
+    CERT_DIR="$PREFIX/etc/https-server"
+else
+    CERT_DIR="/etc/https-server"
+fi
+
+# 在非交互式环境中，不删除证书文件以避免破坏用户数据
+echo "保留证书文件: $CERT_DIR"
+echo "如需手动删除，请运行: rm -rf $CERT_DIR"

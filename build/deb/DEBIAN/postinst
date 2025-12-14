@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+echo "🔧 配置HTTPS服务器..."
+
+if [ -n "$PREFIX" ]; then
+    echo "检测到Termux环境: $PREFIX"
+    mkdir -p $PREFIX/etc/https-server
+    chmod 755 $PREFIX/etc/https-server
+else
+    mkdir -p /etc/https-server
+    chmod 755 /etc/https-server
+fi
+
+echo "✅ 安装完成!"
+echo ""
+echo "📋 使用说明:"
+echo "  1. 生成证书: https-certgen --install"
+echo "  2. 安装CA证书到安卓系统"
+echo "  3. 启动服务器: https-server"
+echo ""

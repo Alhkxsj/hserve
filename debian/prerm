@@ -10,8 +10,6 @@ else
     CERT_DIR="/etc/https-server"
 fi
 
-read -p "是否删除证书文件? (y/N): " choice
-if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-    rm -rf "$CERT_DIR"
-    echo "证书文件已删除: $CERT_DIR"
-fi
+# 在非交互式环境中，不删除证书文件以避免破坏用户数据
+echo "保留证书文件: $CERT_DIR"
+echo "如需手动删除，请运行: rm -rf $CERT_DIR"
