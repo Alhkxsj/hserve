@@ -90,6 +90,7 @@ func Generate(force bool) error {
 	}
 
 	fmt.Println("✅ 证书生成完成")
+	fmt.Println("💡 温馨提示: 请妥善保管您的证书文件")
 	ShowInstructions(caCertPath)
 	return nil
 }
@@ -141,16 +142,19 @@ func CheckCertificateExists(path string) bool {
 
 // ShowInstructions 显示安装证书说明
 func ShowInstructions(caCertPath string) {
-	fmt.Println("\n安卓证书安装步骤:")
+	fmt.Println()
+	fmt.Println("📱 安卓证书安装步骤:")
 	fmt.Println("1. 找到 CA 证书文件:", caCertPath)
 	fmt.Println("2. 复制到手机存储")
 	fmt.Println("3. 设置 → 安全 → 加密与凭据")
 	fmt.Println("4. 安装证书 → CA证书")
 	fmt.Println("5. 选择证书文件，命名为 'Local HTTPS'")
 	fmt.Println()
-	fmt.Println("启动服务器示例:")
+	fmt.Println("🎮 启动服务器示例:")
 	fmt.Println("  cd /path/to/website")
 	fmt.Println("  https-server")
+	fmt.Println()
+	fmt.Println("🌟 愿代码如诗，生活如歌 ~")
 }
 
 // IsInTermux 检测是否在 Termux 环境中

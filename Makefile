@@ -1,7 +1,7 @@
 .PHONY: all build clean install termux-deb
 
 APP_NAME := https-server
-VERSION  := 1.2.0
+VERSION  := 1.2.1
 
 PREFIX ?= /data/data/com.termux/files/usr
 BIN_DIR := build/bin
