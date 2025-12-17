@@ -45,6 +45,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }
@@ -397,17 +398,42 @@ var languageCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		langArg := args[0]
+		var newLang i18n.LangType
+		var successMessage string
+
 		switch langArg {
 		case "en", "EN", "eng", "english":
+			newLang = i18n.EN
 			i18n.SetLanguage(i18n.EN)
-			fmt.Println(i18n.T(i18n.EN, "language_switched_en"))
+			successMessage = i18n.T(i18n.EN, "language_switched_en")
 		case "zh", "ZH", "ch", "cn", "chinese":
+			newLang = i18n.ZH
 			i18n.SetLanguage(i18n.ZH)
-			fmt.Println(i18n.T(i18n.ZH, "language_switched_zh"))
+			successMessage = i18n.T(i18n.ZH, "language_switched_zh")
 		default:
 			fmt.Printf("%s: %s\n", i18n.T(i18n.GetLanguage(), "invalid_lang_error"), langArg)
 			os.Exit(1)
 		}
+
+		// 尝试将语言设置保存到配置文件
+		configDir := filepath.Join(os.Getenv("HOME"), ".config", "hserve")
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			// 如果无法创建配置目录，只在当前会话中设置语言
+			fmt.Println(successMessage)
+			fmt.Printf("%s: %v\n", i18n.T(i18n.GetLanguage(), "config_save_failed"), err)
+			return
+		}
+
+		defaultLangFile := filepath.Join(configDir, "default_lang")
+		if err := os.WriteFile(defaultLangFile, []byte(langArg), 0644); err != nil {
+			// 如果无法写入配置文件，只在当前会话中设置语言
+			fmt.Println(successMessage)
+			fmt.Printf("%s: %v\n", i18n.T(i18n.GetLanguage(), "config_save_failed"), err)
+			return
+		}
+
+		fmt.Println(successMessage)
+		fmt.Printf("%s: %s\n", i18n.T(newLang, "config_saved"), defaultLangFile)
 	},
 }
 
@@ -437,8 +463,8 @@ func initLanguageCmd() {
 
 func init() {
 	// 检查是否有配置文件设置默认语言
-	configDir := "/data/data/com.termux/files/usr/etc/hserve/config"
-	defaultLangFile := configDir + "/default_lang"
+	configDir := filepath.Join(os.Getenv("HOME"), ".config", "hserve")
+	defaultLangFile := filepath.Join(configDir, "default_lang")
 
 	// 尝试读取默认语言设置
 	defaultLang := "en" // 默认为英文
@@ -448,6 +474,11 @@ func init() {
 			defaultLang = string(content)
 			// 去除可能的空白字符和换行符
 			defaultLang = strings.TrimSpace(defaultLang)
+		}
+	} else {
+		// 如果配置文件不存在，尝试检测系统语言
+		if i18n.GetSystemLanguage() == i18n.ZH {
+			defaultLang = "zh"
 		}
 	}
 

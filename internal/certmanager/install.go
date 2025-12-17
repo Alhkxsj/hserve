@@ -3,6 +3,7 @@ package certmanager
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Alhkxsj/hserve/internal/i18n"
 )
@@ -13,15 +14,15 @@ func GetCertPaths() (string, string) {
 	if IsInTermux() {
 		prefix := os.Getenv("PREFIX")
 		if prefix != "" {
-			certPath = prefix + "/etc/hserve/certs/server.crt"
-			keyPath = prefix + "/etc/hserve/certs/server.key"
+			certPath = filepath.Join(prefix, "etc", "hserve", "certs", "server.crt")
+			keyPath = filepath.Join(prefix, "etc", "hserve", "certs", "server.key")
 		} else {
-			certPath = "/data/data/com.termux/files/usr/etc/hserve/certs/server.crt"
-			keyPath = "/data/data/com.termux/files/usr/etc/hserve/certs/server.key"
+			certPath = filepath.Join("/data/data/com.termux/files/usr/etc/hserve/certs", "server.crt")
+			keyPath = filepath.Join("/data/data/com.termux/files/usr/etc/hserve/certs", "server.key")
 		}
 	} else {
-		certPath = "/etc/hserve/certs/server.crt"
-		keyPath = "/etc/hserve/certs/server.key"
+		certPath = filepath.Join("/etc/hserve/certs", "server.crt")
+		keyPath = filepath.Join("/etc/hserve/certs", "server.key")
 	}
 	return certPath, keyPath
 }
@@ -31,12 +32,12 @@ func GetCACertPath() string {
 	if IsInTermux() {
 		prefix := os.Getenv("PREFIX")
 		if prefix != "" {
-			return prefix + "/etc/hserve/certs/ca.crt"
+			return filepath.Join(prefix, "etc", "hserve", "certs", "ca.crt")
 		} else {
-			return "/data/data/com.termux/files/usr/etc/hserve/certs/ca.crt"
+			return filepath.Join("/data/data/com.termux/files/usr/etc/hserve/certs", "ca.crt")
 		}
 	} else {
-		return "/etc/hserve/certs/ca.crt"
+		return filepath.Join("/etc/hserve/certs", "ca.crt")
 	}
 }
 

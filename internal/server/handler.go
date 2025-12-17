@@ -28,13 +28,26 @@ func NewHandler(root string, quiet bool, allowList []string) http.Handler {
 			return
 		}
 
+		// 安全头部
+		secureHeaders(w)
+
+		// 日志记录
 		if !quiet {
 			fmt.Printf("[%s] %s %s\n",
 				time.Now().Format("15:04:05"),
 				r.Method,
 				r.URL.Path)
 		}
-		secureHeaders(w)
+
+		// 修复路径遍历问题
+		upath := r.URL.Path
+		if !strings.HasPrefix(upath, "/") {
+			upath = "/" + upath
+			r.URL.Path = upath
+		}
+		upath = filepath.Join(root, filepath.Clean(upath))
+		r.URL.Path = upath
+
 		fs.ServeHTTP(w, r)
 	})
 }
@@ -64,7 +77,7 @@ func isPathAllowed(requestPath string, allowList []string) bool {
 		}
 
 		// 如果相对路径不以".."开头，则说明请求路径在允许路径下
-		if !strings.HasPrefix(rel, "..") {
+		if !strings.HasPrefix(rel, "..") && !strings.Contains(rel, "/../") && rel != ".." {
 			return true
 		}
 	}

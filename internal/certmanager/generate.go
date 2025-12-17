@@ -41,18 +41,13 @@ func Generate(force bool) error {
 		}
 	}
 
-	// 生成服务器证书
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// 生成CA密钥
+	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to generate CA key: %v", err)
 	}
 
 	// 创建CA证书
-	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
-	}
-
 	caTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
@@ -68,37 +63,46 @@ func Generate(force bool) error {
 
 	caCertDER, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, caKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create CA certificate: %v", err)
 	}
 
 	// 生成CA证书文件
 	if err := writePem(caCertPath, "CERTIFICATE", caCertDER, 0644); err != nil {
-		return err
+		return fmt.Errorf("failed to write CA certificate: %v", err)
 	}
 
+	// 生成服务器密钥
+	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("failed to generate server key: %v", err)
+	}
+
+	// 创建服务器证书模板
 	serverTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
 			CommonName: "localhost",
 		},
 		NotBefore:   time.Now(),
-		NotAfter:    time.Now().AddDate(30, 0, 0),
+		NotAfter:    time.Now().AddDate(30, 0, 0), // 服务器证书有效期30年
 		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:    []string{"localhost", "127.0.0.1"},
-		IPAddresses: []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1")},
+		DNSNames:    []string{"localhost", "127.0.0.1", "0.0.0.0"},
+		IPAddresses: []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1"), net.ParseIP("0.0.0.0")},
 	}
 
+	// 签名服务器证书
 	serverCertDER, err := x509.CreateCertificate(rand.Reader, &serverTemplate, &caTemplate, &serverKey.PublicKey, caKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create server certificate: %v", err)
 	}
 
+	// 写入服务器证书和私钥
 	if err := writePem(certPath, "CERTIFICATE", serverCertDER, 0644); err != nil {
-		return err
+		return fmt.Errorf("failed to write server certificate: %v", err)
 	}
 	if err := writePem(keyPath, "RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(serverKey), 0600); err != nil {
-		return err
+		return fmt.Errorf("failed to write server key: %v", err)
 	}
 
 	fmt.Println(i18n.T(i18n.GetLanguage(), "cert_gen_success"))

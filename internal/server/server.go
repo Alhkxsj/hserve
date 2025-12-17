@@ -22,7 +22,15 @@ type Options struct {
 
 // GetAbsPath 获取绝对路径
 func GetAbsPath(dir string) (string, error) {
-	return filepath.Abs(dir)
+	absPath, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+	// 确保路径存在
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return "", fmt.Errorf(i18n.T(i18n.GetLanguage(), "directory_not_exists"), absPath)
+	}
+	return absPath, nil
 }
 
 // CheckAccess 检查访问权限

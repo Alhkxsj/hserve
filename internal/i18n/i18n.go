@@ -392,6 +392,11 @@ func T(lang LangType, key string) string {
 			return "🌟 Generating secure certificates, please wait..."
 		}
 		return "🌟 正在为您生成安全证书，请稍候..."
+	case "directory_not_exists":
+		if lang == EN {
+			return "Directory does not exist: %s"
+		}
+		return "目录不存在: %s"
 	case "get_home_dir_failed":
 		if lang == EN {
 			return "❌ Failed to get user home directory: %s"
@@ -427,6 +432,16 @@ func T(lang LangType, key string) string {
 			return "Language switched to Chinese"
 		}
 		return "语言已切换为中文"
+	case "config_save_failed":
+		if lang == EN {
+			return "Failed to save configuration"
+		}
+		return "保存配置失败"
+	case "config_saved":
+		if lang == EN {
+			return "Configuration saved to"
+		}
+		return "配置已保存到"
 	default:
 		return key // 返回键本身作为默认值
 	}

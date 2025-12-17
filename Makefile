@@ -1,70 +1,74 @@
-.PHONY: all build clean install deb multiarch install-deb
+# Go parameters
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+GOMOD=$(GOCMD) mod
+GOGET=$(GOCMD) get
+GOVET=$(GOCMD) vet
+GOFMT=gofmt
+BINARY_NAME=hserve
+BINARY_UNIX=$(BINARY_NAME)_unix
 
-APP_NAME := hserve
-VERSION  := 1.2.3
+# Build the project
+build: 
+	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/hserve
 
-PREFIX ?= /data/data/com.termux/files/usr
-BIN_DIR := build/bin
-DIST_DIR := dist
-PKG_DIR := build/pkg
-
-all: build
-
-build:
-	@echo "🔧 构建程序..."
-	@mkdir -p $(BIN_DIR)
-	go build -o $(BIN_DIR)/hserve ./cmd/hserve
-	@echo "✅ 构建完成"
-
+# Install the binary to system
 install: build
-	@echo "📦 安装到 Termux..."
-	install -Dm755 $(BIN_DIR)/hserve $(PREFIX)/bin/hserve
-	mkdir -p $(PREFIX)/etc/hserve
-	@echo "✅ 安装完成"
+	cp $(BINARY_NAME) $(HOME)/go/bin/ || cp $(BINARY_NAME) /usr/local/bin/ || echo "Please copy $(BINARY_NAME) to a directory in your PATH"
 
+# Run tests
+test: 
+	$(GOTEST) -v ./...
+
+# Run go vet
+vet:
+	$(GOVET) ./...
+
+# Format code
+fmt:
+	$(GOFMT) -s -w ./
+
+# Clean build artifacts
+clean:
+	$(GOCLEAN)
+	rm -f $(BINARY_NAME)
+
+# Run go mod tidy
+tidy:
+	$(GOMOD) tidy
+
+# Build for multiple architectures
+multiarch:
+	GOOS=linux GOARCH=amd64 $(GOBUILD) -o dist/$(BINARY_NAME)-linux-amd64 -v ./cmd/hserve
+	GOOS=linux GOARCH=arm64 $(GOBUILD) -o dist/$(BINARY_NAME)-linux-arm64 -v ./cmd/hserve
+	GOOS=linux GOARCH=arm $(GOBUILD) -o dist/$(BINARY_NAME)-linux-arm -v ./cmd/hserve
+	GOOS=android GOARCH=arm64 $(GOBUILD) -o dist/$(BINARY_NAME)-android-arm64 -v ./cmd/hserve
+	GOOS=android GOARCH=arm $(GOBUILD) -o dist/$(BINARY_NAME)-android-arm -v ./cmd/hserve
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o dist/$(BINARY_NAME)-darwin-amd64 -v ./cmd/hserve
+	GOOS=darwin GOARCH=arm64 $(GOBUILD) -o dist/$(BINARY_NAME)-darwin-arm64 -v ./cmd/hserve
+	GOOS=windows GOARCH=amd64 $(GOBUILD) -o dist/$(BINARY_NAME)-windows-amd64.exe -v ./cmd/hserve
+
+# Build deb package
 deb:
-	@echo "📦 构建当前架构的 deb 包..."
+	@echo "Building deb package..."
+	@mkdir -p dist
 	./scripts/build-deb.sh
 
-deb-all:
-	@echo "📦 构建所有架构的 deb 包..."
-	./scripts/build-deb-multiarch.sh
-
-multiarch:
-	@echo "📦 构建多架构版本..."
-	./scripts/build-multiarch.sh
-
+# Install deb package
 install-deb: deb
-	@echo "📦 安装 deb 包 (aarch64)..."
-	dpkg -i $(DIST_DIR)/$(APP_NAME)_$(VERSION)_aarch64.deb
+	sudo dpkg -i dist/*.deb
 
-install-deb-all: deb
-	@echo "📦 安装所有架构的 deb 包..."
-	@for arch in aarch64 arm i686 x86_64; do \
-		if [ -f $(DIST_DIR)/$(APP_NAME)_$(VERSION)_$arch.deb ]; then \
-			dpkg -i $(DIST_DIR)/$(APP_NAME)_$(VERSION)_$arch.deb; \
-		fi \
-	done
+# Run all checks
+check: vet test
 
-install-deb-arch:
-	@echo "📦 安装指定架构的 deb 包..."
-	@if [ -z "$(ARCH)" ]; then \
-		echo "请指定架构: make install-deb-arch ARCH=aarch64"; \
-		exit 1; \
-	fi
-	dpkg -i $(DIST_DIR)/$(APP_NAME)_$(VERSION)_$(ARCH).deb
+# Generate certificates (for testing)
+gen-cert:
+	./$(BINARY_NAME) gen-cert
 
-clean:
-	rm -rf build dist
+# Run server (for testing)
+serve:
+	./$(BINARY_NAME) serve
 
-fmt:
-	@echo "🎨 格式化代码..."
-	go fmt ./...
-
-vet:
-	@echo "🔍 检查代码..."
-	go vet ./...
-
-test:
-	@echo "🧪 运行测试..."
-	go test ./...
+.PHONY: build install test vet fmt clean multiarch deb install-deb check gen-cert serve tidy
