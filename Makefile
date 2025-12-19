@@ -1,7 +1,7 @@
 .PHONY: all build clean install termux-deb
 
 APP_NAME := hserve
-VERSION  := 1.2.5
+VERSION  := 1.2.6
 
 PREFIX ?= /data/data/com.termux/files/usr
 BIN_DIR := build/bin

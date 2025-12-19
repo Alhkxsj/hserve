@@ -19,29 +19,146 @@ func Generate(force bool) error {
 	certPath, keyPath := GetCertPaths()
 	caCertPath := GetCACertPath()
 
-	if !force && CheckCertificateExists(certPath) && CheckCertificateExists(caCertPath) {
+	// 检查证书是否存在
+	if shouldSkipGeneration(force, certPath, caCertPath) {
 		fmt.Println("✅ 证书已存在，无需重新生成")
 		ShowInstructions(caCertPath)
 		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(certPath), 0755); err != nil {
+	// 生成证书
+	return generateAndSaveCertificates(certPath, keyPath, caCertPath)
+}
+
+// shouldSkipGeneration 检查是否应该跳过证书生成
+func shouldSkipGeneration(force bool, certPath, caCertPath string) bool {
+	return !force && CheckCertificateExists(certPath) && CheckCertificateExists(caCertPath)
+}
+
+// generateAndSaveCertificates 生成并保存证书
+func generateAndSaveCertificates(certPath, keyPath, caCertPath string) error {
+	if err := ensureCertDirectory(filepath.Dir(certPath)); err != nil {
 		return err
+	}
+
+	certData, err := createCertificateData()
+	if err != nil {
+		return err
+	}
+
+	if err := saveCertificates(certData, certPath, keyPath, caCertPath); err != nil {
+		return err
+	}
+
+	fmt.Println("✅ 证书生成完成")
+	fmt.Println("💡 温馨提示: 请妥善保管您的证书文件")
+	ShowInstructions(caCertPath)
+	return nil
+}
+
+// ensureCertDirectory 确保证书目录存在
+func ensureCertDirectory(dir string) error {
+	return os.MkdirAll(dir, 0755)
+}
+
+// certificateData 包含证书生成所需的所有数据
+type certificateData struct {
+	caKey       *rsa.PrivateKey
+	serverKey   *rsa.PrivateKey
+	caCertDER   []byte
+	serverCertDER []byte
+}
+
+// createCertificateData 创建证书数据
+func createCertificateData() (certificateData, error) {
+	// 生成证书对
+	caKey, serverKey, err := generateCertificateKeys()
+	if err != nil {
+		return certificateData{}, err
+	}
+
+	// 生成 CA 证书
+	caCertDER, err := generateCACertificate(caKey)
+	if err != nil {
+		return certificateData{}, err
 	}
 
 	// 生成服务器证书
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	serverCertDER, err := generateServerCertificate(caKey, serverKey)
 	if err != nil {
+		return certificateData{}, err
+	}
+
+	return certificateData{
+		caKey:         caKey,
+		serverKey:     serverKey,
+		caCertDER:     caCertDER,
+		serverCertDER: serverCertDER,
+	}, nil
+}
+
+// saveCertificates 保存所有证书文件
+func saveCertificates(data certificateData, certPath, keyPath, caCertPath string) error {
+	// 保存 CA 证书
+	if err := writePem(caCertPath, "CERTIFICATE", data.caCertDER, 0644); err != nil {
 		return err
 	}
 
-	// 创建CA证书
-	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
+	// 保存服务器证书和私钥
+	if err := writePem(certPath, "CERTIFICATE", data.serverCertDER, 0644); err != nil {
+		return err
+	}
+	if err := writePem(keyPath, "RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(data.serverKey), 0600); err != nil {
 		return err
 	}
 
-	caTemplate := x509.Certificate{
+	return nil
+}
+
+// generateCertificateKeys 生成证书密钥对
+func generateCertificateKeys() (*rsa.PrivateKey, *rsa.PrivateKey, error) {
+	// 生成CA私钥
+	caKey, err := generateCAKey()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 生成服务器私钥
+	serverKey, err := generateServerKey()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return caKey, serverKey, nil
+}
+
+// generateCAKey 生成CA密钥
+func generateCAKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, 2048)
+}
+
+// generateServerKey 生成服务器密钥
+func generateServerKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, 2048)
+}
+
+// generateCACertificate 生成CA证书
+func generateCACertificate(caKey *rsa.PrivateKey) ([]byte, error) {
+	// 创建CA证书模板
+	caTemplate := createCACertificateTemplate()
+
+	// 生成CA证书
+	caCertDER, err := createCertificate(&caTemplate, &caTemplate, &caKey.PublicKey, caKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return caCertDER, nil
+}
+
+// createCACertificateTemplate 创建CA证书模板
+func createCACertificateTemplate() x509.Certificate {
+	return x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
 			CommonName: "Local HTTPS CA",
@@ -52,18 +169,33 @@ func Generate(force bool) error {
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 	}
+}
 
-	caCertDER, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, caKey)
+// createCertificate 创建证书
+func createCertificate(template, parent *x509.Certificate, pub interface{}, priv interface{}) ([]byte, error) {
+	return x509.CreateCertificate(rand.Reader, template, parent, pub, priv)
+}
+
+// generateServerCertificate 生成服务器证书
+func generateServerCertificate(caKey *rsa.PrivateKey, serverKey *rsa.PrivateKey) ([]byte, error) {
+	// 创建服务器证书模板
+	serverTemplate := createServerCertificateTemplate()
+
+	// 从CA证书模板获取
+	caTemplate := createCACertificateTemplate()
+
+	// 生成服务器证书
+	serverCertDER, err := createCertificate(&serverTemplate, &caTemplate, &serverKey.PublicKey, caKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// 生成CA证书文件
-	if err := writePem(caCertPath, "CERTIFICATE", caCertDER, 0644); err != nil {
-		return err
-	}
+	return serverCertDER, nil
+}
 
-	serverTemplate := x509.Certificate{
+// createServerCertificateTemplate 创建服务器证书模板
+func createServerCertificateTemplate() x509.Certificate {
+	return x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
 			CommonName: "localhost",
@@ -75,23 +207,6 @@ func Generate(force bool) error {
 		DNSNames:    []string{"localhost", "127.0.0.1"},
 		IPAddresses: []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1")},
 	}
-
-	serverCertDER, err := x509.CreateCertificate(rand.Reader, &serverTemplate, &caTemplate, &serverKey.PublicKey, caKey)
-	if err != nil {
-		return err
-	}
-
-	if err := writePem(certPath, "CERTIFICATE", serverCertDER, 0644); err != nil {
-		return err
-	}
-	if err := writePem(keyPath, "RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(serverKey), 0600); err != nil {
-		return err
-	}
-
-	fmt.Println("✅ 证书生成完成")
-	fmt.Println("💡 温馨提示: 请妥善保管您的证书文件")
-	ShowInstructions(caCertPath)
-	return nil
 }
 
 // writePem 写入 PEM 文件

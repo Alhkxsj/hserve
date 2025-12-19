@@ -8,7 +8,7 @@ echo "🚀 Building hserve..."
 # 获取项目版本
 VERSION=$(grep 'VERSION :=' Makefile | cut -d' ' -f3)
 if [ -z "$VERSION" ]; then
-    VERSION="1.2.5-dev"
+    VERSION="1.2.6-dev"
 fi
 
 # 创建构建目录
