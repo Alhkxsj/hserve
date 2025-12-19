@@ -1,6 +1,6 @@
 1. 证书文件位置
 
-运行 hserve-certgen 后，会生成一个 CA 证书文件
+运行 hserve cert 后，会生成一个 CA 证书文件
 证书文件默认放在home目录
 ~/hserve-ca.crt
 

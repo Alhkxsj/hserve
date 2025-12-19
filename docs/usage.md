@@ -20,11 +20,9 @@ Termux
 
 make termux-install
 
-安装完成后会得到两个命令：
+安装完成后会得到一个命令：
 
-hserve-certgen 证书生成工具
-
-hserve         HTTPS 文件服务器
+hserve         HTTPS 文件服务器（包含证书生成功能）
 
 
 
@@ -34,7 +32,11 @@ hserve         HTTPS 文件服务器
 
 首次使用前必须生成证书：
 
-hserve-certgen
+hserve cert
+
+或
+
+hserve certgen
 
 生成内容：
 
@@ -57,7 +59,9 @@ CA 根证书（用于安装到 Android 系统）
 
 5. 启动服务器
 
-hserve
+hserve serve
+
+或直接运行 hserve（默认启动服务器）
 
 常用参数：
 
@@ -67,7 +71,28 @@ hserve
 
 示例：
 
+hserve serve -dir=/sdcard -port=9443
+
+或
+
 hserve -dir=/sdcard -port=9443
+
+
+---
+
+6. 命令帮助
+
+查看所有可用命令：
+
+hserve help
+
+查看特定命令帮助：
+
+hserve cert -help
+
+hserve serve -help
+
+hserve version
 
 
 ---

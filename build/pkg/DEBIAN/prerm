@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+echo "🗑️  卸载 hserve..."
+echo "ℹ️  证书目录未删除：$PREFIX/etc/hserve"
+echo "如需手动删除：rm -rf $PREFIX/etc/hserve"
