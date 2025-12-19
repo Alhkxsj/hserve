@@ -102,7 +102,11 @@ func writePem(path, typ string, data []byte, mode os.FileMode) error {
 	}
 	defer f.Close()
 
-	return pem.Encode(f, &pem.Block{Type: typ, Bytes: data})
+	if err := pem.Encode(f, &pem.Block{Type: typ, Bytes: data}); err != nil {
+		return err
+	}
+
+	return f.Close()
 }
 
 // GetCertPaths 返回证书和私钥路径
@@ -118,19 +122,34 @@ func GetCertPaths() (string, string) {
 			keyPath = "/data/data/com.termux/files/usr/etc/hserve/key.pem"
 		}
 	} else {
-		certPath = "/etc/hserve/cert.pem"
-		keyPath = "/etc/hserve/key.pem"
+		// 在非 Termux 环境中，使用用户主目录
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			homeDir = "/tmp"
+		}
+		certPath = filepath.Join(homeDir, ".hserve", "cert.pem")
+		keyPath = filepath.Join(homeDir, ".hserve", "key.pem")
 	}
 	return certPath, keyPath
 }
 
 // GetCACertPath 返回 CA 证书路径
 func GetCACertPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "/tmp"
+	if IsInTermux() {
+		// 在 Termux 环境中，使用 Termux 的 home 目录
+		home := os.Getenv("HOME")
+		if home == "" {
+			home = "/data/data/com.termux/files/home"
+		}
+		return filepath.Join(home, "hserve-ca.crt")
+	} else {
+		// 在非 Termux 环境中，使用用户主目录
+		home, err := os.UserHomeDir()
+		if err != nil {
+			home = "/tmp"
+		}
+		return filepath.Join(home, "hserve-ca.crt")
 	}
-	return filepath.Join(home, "hserve-ca.crt")
 }
 
 // CheckCertificateExists 检查证书是否存在

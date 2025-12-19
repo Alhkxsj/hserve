@@ -1,21 +1,39 @@
 #!/bin/bash
 set -e
 
-echo "🔧 初始化 hserve 环境..."
+echo "🚀 hserve 安装程序正在运行..."
+echo "📦 正在初始化 hserve 环境..."
 
 CERT_DIR="$PREFIX/etc/hserve"
 mkdir -p "$CERT_DIR"
 chmod 755 "$CERT_DIR"
 
-echo "🔐 自动生成证书..."
-# 自动运行 hserve cert 命令生成证书
-hserve cert
+echo "🔐 正在自动生成 HTTPS 证书..."
+echo "💡 新版本安装，强制重新生成证书以确保安全..."
 
-echo "✅ 安装完成"
+# 自动运行 hserve cert -force 命令强制重新生成证书
+hserve cert -force
+
+echo "================================"
+echo "🎉 hserve 安装完成！"
 echo ""
-echo "📋 使用说明："
-echo "  1️⃣ 安装 CA 证书到安卓系统（$HOME/hserve-ca.crt）"
-echo "  2️⃣ 启动服务器： hserve"
+echo "📋 快速开始指南："
+echo "  1️⃣  安装 CA 证书到安卓系统（重要！）"
+echo "      证书位置：$HOME/hserve-ca.crt"
+echo "      安装方法：设置 → 安全 → 加密与凭据 → 从存储设备安装"
 echo ""
-echo "💡 提示：证书已自动生成，请按照说明安装CA证书到系统中"
+echo "  2️⃣  启动 HTTPS 服务器"
+echo "      命令：hserve"
+echo "      默认端口：8443"
 echo ""
+echo "  3️⃣  在浏览器中访问"
+echo "      地址：https://localhost:8443"
+echo ""
+echo "🔧 高级用法："
+echo "  - 指定端口：hserve -port 9443"
+echo "  - 指定目录：hserve -dir /path/to/files"
+echo "  - 查看帮助：hserve help"
+echo ""
+echo "💡 温馨提示：新版本已自动为您重新生成证书，请务必安装新的CA证书以避免浏览器安全警告"
+echo "🌟 愿代码如诗，生活如歌 ~"
+echo "================================"

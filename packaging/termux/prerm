@@ -1,19 +1,25 @@
 #!/bin/bash
 set -e
 
-echo "🗑️  准备更新 hserve..."
+echo "🔄 检测到 hserve 旧版本，正在准备更新..."
 
 # 删除旧的证书目录
 if [ -d "$PREFIX/etc/hserve" ]; then
-    echo "🗑️  删除旧证书目录：$PREFIX/etc/hserve"
+    echo "🗑️  检测到旧证书目录，正在删除：$PREFIX/etc/hserve"
     rm -rf "$PREFIX/etc/hserve"
 fi
 
 # 删除可能存在的旧CA证书
 HOME_DIR=$(eval echo ~$(logname) 2>/dev/null || echo $HOME)
 if [ -f "$HOME_DIR/hserve-ca.crt" ]; then
-    echo "🗑️  删除旧CA证书：$HOME_DIR/hserve-ca.crt"
+    echo "🗑️  检测到旧CA证书，正在删除：$HOME_DIR/hserve-ca.crt"
     rm -f "$HOME_DIR/hserve-ca.crt"
 fi
 
-echo "✅ 旧版本清理完成"
+# 清理可能存在的临时证书文件
+if [ -f "$HOME/hserve-ca.crt" ]; then
+    echo "🗑️  检测到旧CA证书，正在删除：$HOME/hserve-ca.crt"
+    rm -f "$HOME/hserve-ca.crt"
+fi
+
+echo "✅ 旧版本证书清理完成，准备安装新版本"
