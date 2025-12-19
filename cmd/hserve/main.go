@@ -62,7 +62,7 @@ func showHelp() {
 }
 
 func showVersion() {
-	fmt.Println("🌟 hserve v1.2.3")
+	fmt.Println("🌟 hserve v1.2.4")
 	fmt.Println("👤 作者: 快手阿泠 (Alexa Haley)")
 	fmt.Println("🏠 项目地址: https://github.com/Alhkxsj/hserve")
 	fmt.Println("✨ 愿代码如诗，生活如歌 ~")

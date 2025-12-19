@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+echo "🔧 初始化 hserve 环境..."
+
+CERT_DIR="$PREFIX/etc/hserve"
+mkdir -p "$CERT_DIR"
+chmod 755 "$CERT_DIR"
+
+echo "🔐 自动生成证书..."
+# 自动运行 hserve cert 命令生成证书
+hserve cert
+
+echo "✅ 安装完成"
+echo ""
+echo "📋 使用说明："
+echo "  1️⃣ 安装 CA 证书到安卓系统（$HOME/hserve-ca.crt）"
+echo "  2️⃣ 启动服务器： hserve"
+echo ""
+echo "💡 提示：证书已自动生成，请按照说明安装CA证书到系统中"
+echo ""
